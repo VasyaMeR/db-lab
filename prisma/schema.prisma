@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model blog {
+  id        Int       @id @default(autoincrement())
+  title     String    @db.VarChar
+  content   String    @db.VarChar
+  author_id Int
+  user      user      @relation(fields: [author_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  comment   comment[]
+}
+
+model comment {
+  id        Int    @id @default(autoincrement())
+  content   String @db.VarChar
+  author_id Int
+  blog_id   Int
+  user      user   @relation(fields: [author_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  blog      blog   @relation(fields: [blog_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model language {
+  name              String       @db.VarChar
+  version           String       @db.VarChar
+  is_compiled       Boolean      @default(false)
+  compiling_command String?      @db.VarChar
+  compiling_args    String?      @db.VarChar
+  submission        submission[]
+
+  @@id([name, version])
+}
+
+model problem {
+  id         Int          @id @default(autoincrement())
+  name       String       @db.VarChar
+  statement  String       @db.VarChar
+  author_id  Int
+  user       user         @relation(fields: [author_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  submission submission[]
+}
+
+model status {
+  name                                 String       @id(map: "status_pk") @db.VarChar
+  color                                String       @default("RED") @db.VarChar
+  submission_submission_statusTostatus submission[] @relation("submission_statusTostatus")
+}
+
+model submission {
+  id                               Int      @id @default(autoincrement())
+  author_id                        Int
+  problem_id                       Int
+  language_name                    String   @db.VarChar
+  language_version                 String   @db.VarChar
+  status                           String   @db.VarChar
+  user                             user     @relation(fields: [author_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  language                         language @relation(fields: [language_name, language_version], references: [name, version], onDelete: NoAction, onUpdate: NoAction)
+  problem                          problem  @relation(fields: [problem_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  status_submission_statusTostatus status   @relation("submission_statusTostatus", fields: [status], references: [name], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user {
+  id            Int          @id @default(autoincrement())
+  name          String       @unique(map: "user_name_uindex") @db.VarChar
+  password_hash String       @db.VarChar
+  blog          blog[]
+  comment       comment[]
+  problem       problem[]
+  submission    submission[]
+}
